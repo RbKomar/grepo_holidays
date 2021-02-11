@@ -12,8 +12,8 @@ def building_bot(building_list: []):
     ).click()
 
 
-login = "kanapke"
-password = "robcio98"
+login = "x"
+password = "x"
 collected_flag = False
 while True:
     try:
