@@ -10,9 +10,9 @@ attack_counter = 0
 
 # INFO VARS
 ############################################################################################
-login = "kanapke"
-password = "robcio98"
-collected_flag = False
+login = "x"
+password = "x"
+MAXIMUM_STORAGE = 15000
 
 building_name_map = {
     "Senat": "main",
@@ -30,10 +30,10 @@ building_name_map = {
     "Jaskinia": "hide"}
 
 building_list = [
-    "Gospodarstwo wiejskie",
-    "Gospodarstwo wiejskie",
-    "Magazyn",
-    "Magazyn",
+    "Akademia",
+    "Akademia",
+    "Akademia",
+    "Gospodarstwo wiejskie"
 ]
 
 
@@ -122,7 +122,14 @@ def farming_villages():
         driver.find_element_by_xpath(
             '//*[@id="fto_claim_button"]'
         ).click()
-
+        try:
+            time.sleep(2)
+            driver.find_element_by_xpath(
+                '/html/body/div[15]/div/div[11]/div/div[2]/div[1]'
+            ).click()
+            time.sleep(2)
+        except:
+            print("Can't handle with popup screen in village farming")
         return True
     except:
         return False
@@ -198,10 +205,10 @@ def check_storage():
     wood = int(driver.find_element_by_xpath('//*[@id="ui_box"]/div[6]/div[1]/div[1]/div[2]').text)
     stone = int(driver.find_element_by_xpath('//*[@id="ui_box"]/div[6]/div[2]/div[1]/div[2]').text)
     cash = int(driver.find_element_by_xpath('//*[@id="ui_box"]/div[6]/div[3]/div[1]/div[2]').text)
-    if wood > 10000 and stone > 10000 and cash > 10000:
-        return False
-    else:
+    if wood > MAXIMUM_STORAGE and stone > MAXIMUM_STORAGE and cash > MAXIMUM_STORAGE:
         return True
+    else:
+        return False
 
 
 def check_farm():
@@ -236,12 +243,10 @@ while True:
         pass
     # AFTER LOGIN
     time.sleep(5)
-    ############################
-    #if attack_counter % 2 == 0:
-    #    building_bot(building_list)
-    #    driver.refresh()
-    #    time.sleep(4)
-    #############################
+    if attack_counter % 2 == 0:
+        building_bot(building_list)
+        driver.refresh()
+        time.sleep(4)
     # ATTACKING BANDITS ES
     #if attack_counter % 2 == 0:
     #    collect_reward()
