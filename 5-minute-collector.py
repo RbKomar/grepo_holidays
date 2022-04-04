@@ -225,14 +225,14 @@ while True:
             '//*[@id="login_password"]').send_keys(password)
         driver.find_element_by_xpath(
             '/html/body/div[3]/div/div[1]/div[1]/div[1]/div/form/button/span'
-        ).click()
+                  ).click()
         time.sleep(2)
     except:
         pass
     # select server
     try:
         driver.find_element_by_xpath(
-            '/html/body/div[2]/div/div/div[1]/div[2]/div[4]/form/div[2]/div/ul/li[1]/div'
+            '/html/body/div[2]/div/div/div[1]/div[2]/div[5]/form/div[2]/div/ul/li[1]/div'
         ).click()
         time.sleep(1)
     except:
