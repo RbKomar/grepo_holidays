@@ -1,49 +1,106 @@
 from selenium import webdriver
 import time
 
-url = "https://pl96.grepolis.com/"
+url = "https://pl106.grepolis.com/"
 driver = webdriver.Chrome("chromedriver.exe")
 driver.get(url)
 
-# potem napisze bo tera mi sie nie chce XD
-def building_bot(building_list: []):
+attack_counter = 0
+
+
+# INFO VARS
+############################################################################################
+login = "kanapke"
+password = "robcio98"
+MAXIMUM_STORAGE = 2512
+
+building_name_map = {
+    "Senat": "main",
+    "Obóz drwali": "lumber",
+    "Gospodarstwo wiejskie": "farm",
+    "Kamieniołom": "stoner",
+    "Magazyn": "storage",
+    "Kopalnia srebra": "ironer",
+    "Koszary": "barracks",
+    "Świątynia": "temple",
+    "Targowisko": "market",
+    "Port": "docks",
+    "Akademia": "academy",
+    "Mur miejski": "wall",
+    "Jaskinia": "hide"}
+
+building_list = [
+]
+
+
+# FUNCTIONS
+############################################################################################
+def collect_building_levels():
+    b = {}
+    time.sleep(4)
     driver.find_element_by_xpath(
-        '/html/body/div[3]/div/div[1]/div[1]/div[1]/div/form/button/span'
-    ).click()
+        '//*[@id="quickbar_dropdown0"]/div').click()
+    time.sleep(2)
+    b["Senat"] = int(driver.find_element_by_xpath('//*[@id="building_main_main"]/div[2]/div[1]/span[2]').text)
+    b["Obóz drwali"] = int(driver.find_element_by_xpath('//*[@id="building_main_lumber"]/div[2]/div[1]/span[2]').text)
+    b["Gospodarstwo wiejskie"] = int(driver.find_element_by_xpath('//*[@id="building_main_farm"]/div[2]/div[1]/span[1]').text)
+    b["Kamieniołom"] = int(driver.find_element_by_xpath('//*[@id="building_main_stoner"]/div[2]/div[1]/span[1]').text)
+    b["Magazyn"] = int(driver.find_element_by_xpath('//*[@id="building_main_storage"]/div[2]/div[1]/span[1]').text)
+    b["Kopalnia srebra"] = int(driver.find_element_by_xpath('//*[@id="building_main_ironer"]/div[2]/div[1]/span[1]').text)
+    b["Koszary"] = int(driver.find_element_by_xpath('//*[@id="building_main_barracks"]/div[2]/div[1]/span[1]').text)
+    b["Świątynia"] = int(driver.find_element_by_xpath('//*[@id="building_main_temple"]/div[2]/div[1]/span[1]').text)
+    b["Targowisko"] = int(driver.find_element_by_xpath('//*[@id="building_main_market"]/div[2]/div[1]/span[1]').text)
+    b["Port"] = int(driver.find_element_by_xpath('//*[@id="building_main_docks"]/div[2]/div[1]/span[1]').text)
+    b["Akademia"] = int(driver.find_element_by_xpath('//*[@id="building_main_academy"]/div[2]/div[1]/span[1]').text)
+    b["Mur miejski"] = int(driver.find_element_by_xpath('//*[@id="building_main_wall"]/div[2]/div[1]/span[1]').text)
+    b["Jaskinia"] = int(driver.find_element_by_xpath('//*[@id="building_main_hide"]/div[2]/div[1]/span[1]').text)
+    return b
 
 
-login = "x"
-password = "x"
-collected_flag = False
-while True:
+def is_building_possible(building: str):
     try:
+        time.sleep(4)
         driver.find_element_by_xpath(
-            '//*[@id="login_userid"]').send_keys(login)
-        driver.find_element_by_xpath(
-            '//*[@id="login_password"]').send_keys(password)
-        driver.find_element_by_xpath(
-            '/html/body/div[3]/div/div[1]/div[1]/div[1]/div/form/button/span'
-        ).click()
+            '//*[@id="quickbar_dropdown0"]/div').click()
         time.sleep(2)
+        msg = driver.find_element_by_xpath('// *[ @ id = "building_main_not_possible_button_'+building_name_map[building]+'"]').text
+        print(msg)
+        return False
     except:
-        pass
+        return True
 
+
+def build(building: str):
     try:
+        time.sleep(4)
         driver.find_element_by_xpath(
-            '/html/body/div[2]/div/div/div[1]/div[2]/div[4]/form/div[2]/div/ul/li[1]/div'
-        ).click()
-        time.sleep(1)
+            '//*[@id="quickbar_dropdown0"]/div').click()
+        time.sleep(2)
+        if is_building_possible(building):
+            driver.find_element_by_xpath('//*[@id="building_main_'+building_name_map[building]+'"]/div[2]/a[1]').click()
+            return True
+        else:
+            print("something is not ok in build()")
+            return False
     except:
-        pass
+        print("Can't build yet")
+        return False
 
-    try:
-        driver.find_element_by_xpath(
-            '/html/body/div[13]/div/div[8]/div[3]/div'
-        ).click()
-        time.sleep(1)
-    except:
-        pass
 
+def building_bot(building_l: []):
+    check_farm()
+    for building in building_l[:]:
+        if build(building):
+            building_l.remove(building)
+        else:
+            break
+
+
+def farming_villages():
+    if check_storage():
+        print("Full storage")
+        return False
+    time.sleep(3)
     try:
         time.sleep(5)
         driver.find_element_by_xpath(
@@ -55,18 +112,156 @@ while True:
         ).click()
         time.sleep(3)
         driver.find_element_by_xpath(
-            '/html/body/div[14]/div[2]/div[5]/div[2]/div[2]/div/ul/li[2]/div[3]/div[3]'
+            '//*[@id="fto_town_wrapper"]/div/div[9]/span/a'
         ).click()
-        collected_flag = True
+        time.sleep(3)
+        driver.find_element_by_xpath(
+            '//*[@id="fto_claim_button"]'
+        ).click()
+        try:
+            time.sleep(2)
+            driver.find_element_by_xpath(
+                '/html/body/div[15]/div/div[11]/div/div[2]/div[1]'
+            ).click()
+            time.sleep(2)
+        except:
+            print("Can't handle with popup screen in village farming")
+        return True
     except:
-        collected_flag = False
-    if collected_flag:
-        waiting_time = 300
+        return False
+
+
+def attack_bandits():
+    time.sleep(5)
+    driver.find_element_by_xpath(
+        '// *[ @ id = "ui_box"] / div[8] / div[1] / div[1] / div[1] / div'
+    ).click()
+    try:
+        time.sleep(4)
+        driver.find_element_by_xpath(
+            '/html/body/div[1]/div[22]/div/div[1]/div[1]/div[2]/div[5]/div'
+        ).click()
+        time.sleep(4)
+        # KLIKANIE JEDNOSTEK XD
+        driver.find_element_by_xpath(
+            '/html/body/div[13]/div/div[11]/div/div[3]/div/div[11]/div/div[1]/div[1]/div[1]'
+        ).click()
+        driver.find_element_by_xpath(
+            '/html/body/div[13]/div/div[11]/div/div[3]/div/div[11]/div/div[1]/div[2]/div[1]'
+        ).click()
+        driver.find_element_by_xpath(
+            '/html/body/div[13]/div/div[11]/div/div[3]/div/div[11]/div/div[1]/div[3]/div[1]'
+        ).click()
+        driver.find_element_by_xpath(
+            '/html/body/div[13]/div/div[11]/div/div[3]/div/div[11]/div/div[1]/div[4]/div[1]'
+        ).click()
+        driver.find_element_by_xpath(
+            '/html/body/div[13]/div/div[11]/div/div[3]/div/div[11]/div/div[1]/div[5]/div[1]'
+        ).click()
+        print("wybral wojska")
+        # kliknij w atak
+        driver.find_element_by_xpath(
+            '/html/body/div[13]/div/div[11]/div/div[5]/div[3]'
+        ).click()
+        time.sleep(1)
+    except:
+        collect_reward()
+        print("cos nie dziala w wyslaniu ataku na bandytow :'(")
+
+
+def collect_reward():
+    try:
+        time.sleep(2)
+        driver.find_element_by_xpath(
+            '/html/body/div[1]/div[8]/div[1]/div[1]/div[1]/div'
+        ).click()
+        time.sleep(2)
+        driver.find_element_by_xpath(
+            '/html/body/div[1]/div[22]/div/div[1]/div[1]/div[2]/div[5]/div'
+        ).click()
+        time.sleep(3)
+        driver.find_element_by_xpath(
+            '/html/body/div[13]/div/div[11]/div/div/div[3]/div[3]'
+        ).click()
+        time.sleep(2)
+        try:
+            driver.find_element_by_xpath(
+                '/html/body/div[14]/div[2]'
+            ).click()
+        except:
+            driver.find_element_by_xpath(
+                '/html/body/div[14]/div[1]'
+            ).click()
+        time.sleep(1)
+    except:
+        print("Couldn't collect the fight reward.")
+
+
+def check_storage():
+    wood = int(driver.find_element_by_xpath('//*[@id="ui_box"]/div[6]/div[1]/div[1]/div[2]').text)
+    stone = int(driver.find_element_by_xpath('//*[@id="ui_box"]/div[6]/div[2]/div[1]/div[2]').text)
+    cash = int(driver.find_element_by_xpath('//*[@id="ui_box"]/div[6]/div[3]/div[1]/div[2]').text)
+    if wood > MAXIMUM_STORAGE and stone > MAXIMUM_STORAGE and cash > MAXIMUM_STORAGE:
+        return True
     else:
-        waiting_time = 1
+        return False
+
+
+def check_farm():
+    ppl = int(driver.find_element_by_xpath('/html/body/div[1]/div[6]/div[4]/div[1]/div[2]').text)
+    if ppl < 10:
+        if "Magazyn" != building_list[0]:
+            building_list.insert(0, "Magazyn")
+
+
+# MAIN BODY
+############################################################################################
+while True:
+    # LOGIN
+    try:
+        driver.find_element_by_xpath(
+            '//*[@id="login_userid"]').send_keys(login)
+        driver.find_element_by_xpath(
+            '//*[@id="login_password"]').send_keys(password)
+        driver.find_element_by_xpath(
+            '/html/body/div[3]/div/div[1]/div[1]/div[1]/div/form/button/span'
+        ).click()
+        time.sleep(2)
+    except:
+        pass
+    # select server
+    try:
+        driver.find_element_by_xpath(
+            '/html/body/div[2]/div/div/div[1]/div[2]/div[4]/form/div[2]/div/ul/li[1]/div'
+        ).click()
+        time.sleep(1)
+    except:
+        pass
+    # AFTER LOGIN
+    time.sleep(5)
+    if attack_counter % 2 == 0:
+        building_bot(building_list)
+        driver.refresh()
+        time.sleep(4)
+    # ATTACKING BANDITS ES
+    #if attack_counter % 2 == 0:
+    #    collect_reward()
+    #    attack_bandits()
+    #    driver.refresh()
+    #    time.sleep(3)
+    #    if attack_counter == 2:
+    #        attack_counter = 0
+    #if attack_counter == 1:
+    #    collect_reward()
+    #    driver.refresh()
+    #    time.sleep(3)
+    ##############################
+    if farming_villages():
+        waiting_time = 650
+        attack_counter += 1
+    else:
+        waiting_time = 5
     time.sleep(waiting_time)
     driver.refresh()
-    time.sleep(2)
+    time.sleep(20)
 #driver.quit()
-
-
