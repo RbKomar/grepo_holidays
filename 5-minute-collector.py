@@ -194,9 +194,9 @@ def collect_reward():
         driver.find_element(By.XPATH,
                             '/html/body/div[1]/div[22]/div/div[1]/div[1]/div[2]/div[5]/div'
                             ).click()
-        time.sleep(3)
+        time.sleep(2)
         driver.find_element(By.XPATH,
-                            '/html/body/div[12]/div/div[11]/div/div/div[3]/div[3]'
+                            '/html/body/div[12]/div/div[11]/div/div/div[3]/a'
                             ).click()
         time.sleep(2)
         try:
@@ -216,6 +216,7 @@ def check_storage():
     wood = int(driver.find_element(By.XPATH, '//*[@id="ui_box"]/div[6]/div[1]/div[1]/div[2]').text)
     stone = int(driver.find_element(By.XPATH, '//*[@id="ui_box"]/div[6]/div[2]/div[1]/div[2]').text)
     cash = int(driver.find_element(By.XPATH, '//*[@id="ui_box"]/div[6]/div[3]/div[1]/div[2]').text)
+    print(f"Wood: {wood} | Stone: {stone}| Silver coins: {cash}")
     if wood > MAXIMUM_STORAGE and stone > MAXIMUM_STORAGE and cash > MAXIMUM_STORAGE:
         return True
     else:
