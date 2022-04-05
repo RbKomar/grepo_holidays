@@ -12,7 +12,7 @@ attack_counter = 0
 ############################################################################################
 login = "l"
 password = "p"
-MAXIMUM_STORAGE = 2512 # rozmiar magazynu, zeby nie przelalo
+MAXIMUM_STORAGE = 9484
 
 building_name_map = {
     "Senat": "main",
@@ -30,7 +30,18 @@ building_name_map = {
     "Jaskinia": "hide"}
 
 building_list = [
-]
+    'Obóz drwali',
+    'Obóz drwali',
+    'Akademia',
+    'Akademia',
+    'Akademia',
+    'Jaskinia',
+    'Jaskinia',
+    'Jaskinia',
+    'Jaskinia',
+    'Jaskinia',
+    'Senat',
+    'Senat',]
 
 
 # FUNCTIONS
@@ -190,11 +201,11 @@ def collect_reward():
         time.sleep(2)
         try:
             driver.find_element(By.XPATH,
-                                '/html/body/div[14]/div[2]'
+                                '/html/body/div[13]/div[2]'
                                 ).click()
         except:
             driver.find_element(By.XPATH,
-                                '/html/body/div[14]/div[1]'
+                                '/html/body/div[13]/div[1]'
                                 ).click()
         time.sleep(1)
     except:
