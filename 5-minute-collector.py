@@ -1,9 +1,14 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
+
 import time
 
 url = "https://pl106.grepolis.com/"
-driver = webdriver.Chrome("chromedriver.exe")
+s = Service(ChromeDriverManager().install())
+driver = webdriver.Chrome(service=s)
+driver.maximize_window()
 driver.get(url)
 
 attack_counter = 0
@@ -12,7 +17,7 @@ attack_counter = 0
 ############################################################################################
 login = "l"
 password = "p"
-MAXIMUM_STORAGE = 9484
+MAXIMUM_STORAGE = 11824
 
 building_name_map = {
     "Senat": "main",
@@ -30,18 +35,7 @@ building_name_map = {
     "Jaskinia": "hide"}
 
 building_list = [
-    'Obóz drwali',
-    'Obóz drwali',
-    'Akademia',
-    'Akademia',
-    'Akademia',
-    'Jaskinia',
-    'Jaskinia',
-    'Jaskinia',
-    'Jaskinia',
-    'Jaskinia',
-    'Senat',
-    'Senat',]
+]
 
 
 # FUNCTIONS
@@ -173,6 +167,10 @@ def attack_bandits():
                             '/html/body/div[12]/div/div[11]/div/div[3]/div/div[11]/div/div[1]/div[5]/div[1]'
                             ).click()
         time.sleep(.5)
+        driver.find_element(By.XPATH,
+                            '/html/body/div[12]/div/div[11]/div/div[3]/div/div[11]/div/div[1]/div[9]/div[1]'
+                            ).click()
+        time.sleep(.5)
         print("wybral wojska")
         # kliknij w atak
         driver.find_element(By.XPATH,
@@ -217,7 +215,7 @@ def check_storage():
     stone = int(driver.find_element(By.XPATH, '//*[@id="ui_box"]/div[6]/div[2]/div[1]/div[2]').text)
     cash = int(driver.find_element(By.XPATH, '//*[@id="ui_box"]/div[6]/div[3]/div[1]/div[2]').text)
     print(f"Wood: {wood} | Stone: {stone}| Silver coins: {cash}")
-    if wood > MAXIMUM_STORAGE and stone > MAXIMUM_STORAGE and cash > MAXIMUM_STORAGE:
+    if wood >= MAXIMUM_STORAGE and stone >= MAXIMUM_STORAGE and cash >= MAXIMUM_STORAGE:
         return True
     else:
         return False
@@ -226,8 +224,8 @@ def check_storage():
 def check_farm():
     ppl = int(driver.find_element(By.XPATH, '/html/body/div[1]/div[6]/div[4]/div[1]/div[2]').text)
     if ppl < 10:
-        if "Magazyn" != building_list[0]:
-            building_list.insert(0, "Magazyn")
+        if "Gospodarstwo wiejskie" != building_list[0]:
+            building_list.insert(0, "Gospodarstwo wiejskie")
 
 
 # MAIN BODY
