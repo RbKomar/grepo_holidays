@@ -17,7 +17,7 @@ attack_counter = 0
 ############################################################################################
 login = "l"
 password = "p"
-MAXIMUM_STORAGE = 11824
+MAXIMUM_STORAGE = 14315
 
 building_name_map = {
     "Senat": "main",
@@ -120,17 +120,17 @@ def farming_villages():
                             '/html/body/div[7]/div[2]/div/div/ul/li[2]/ul/li[2]'
                             ).click()
         time.sleep(3)
-        # driver.find_element(By.XPATH,
-        #    '//*[@id="fto_town_wrapper"]/div/div[9]/span/a'
-        # ).click()
-        # time.sleep(3)
+        driver.find_element(By.XPATH,
+                            '//*[@id="fto_town_wrapper"]/div/div[9]/span/a'
+                            ).click()
+        time.sleep(3)
         driver.find_element(By.XPATH,
                             '//*[@id="fto_claim_button"]'
                             ).click()
         try:
             time.sleep(2)
             driver.find_element(By.XPATH,
-                                '/html/body/div[15]/div/div[11]/div/div[2]/div[1]'
+                                '/html/body/div[14]/div/div[11]/div/div[2]/div[1]/div[3]'
                                 ).click()
             time.sleep(2)
         except:
@@ -258,20 +258,20 @@ while True:
         driver.refresh()
         time.sleep(4)
     # ATTACKING BANDITS ES
-    if attack_counter % 2 == 0:
-        collect_reward()
-        attack_bandits()
-        driver.refresh()
-        time.sleep(3)
-        if attack_counter == 2:
-            attack_counter = 0
-    if attack_counter == 1:
-        collect_reward()
-        driver.refresh()
-        time.sleep(3)
+    # if attack_counter % 2 == 0:
+    #     collect_reward()
+    #     attack_bandits()
+    #     driver.refresh()
+    #     time.sleep(3)
+    #     if attack_counter == 2:
+    #         attack_counter = 0
+    # if attack_counter == 1:
+    #     collect_reward()
+    #     driver.refresh()
+    #     time.sleep(3)
     ##############################
     if farming_villages():
-        waiting_time = 650
+        waiting_time = 310
         attack_counter += 1
     else:
         waiting_time = 5
