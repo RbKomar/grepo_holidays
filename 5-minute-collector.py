@@ -130,7 +130,7 @@ def farming_villages():
         try:
             time.sleep(2)
             driver.find_element(By.XPATH,
-                                '/html/body/div[14]/div/div[11]/div/div[2]/div[1]/div[3]'
+                                '/html/body/div[14]/div/div[11]/div/div[2]/div[1]'
                                 ).click()
             time.sleep(2)
         except:
