@@ -3,6 +3,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 import json
+import csv
 import time
 
 
@@ -35,18 +36,20 @@ class City:
 
     @staticmethod
     def load_building_names():
-        with open("mapping/buildings_naming.json", "r") as fp:
+        with open("resources/buildings_naming.json", "r") as fp:
             building_name_map = json.load(fp)
         return building_name_map
 
-    @staticmethod
-    def load_building_list(path=""):
-        if path != "":
-            with open(path, "r") as fp:
-                data = fp.read()
-                building_list = data.split(r"\n")
-                return building_list
-        return []
+    def load_building_list(self):
+        with open(f"{self.name}.csv", "r") as fp:
+            data = fp.read()
+            building_list = data.split(r"\n")
+            return building_list
+
+    def update_building_list(self, building_list):
+        with open(f"{self.name}.csv", "w") as fp:
+            writer = csv.writer(fp)
+            writer.writerows(building_list)
 
     def get_city_name(self):
         city_name = self.driver.find_element(By.XPATH, '/html/body/div[1]/div[17]/div[3]/div[1]/div').text
@@ -152,8 +155,51 @@ class City:
         for building in building_l[:]:
             if self.build(building):
                 building_l.remove(building)
+                self.update_building_list(building_l)
             else:
                 break
+
+    def check_storage(self):
+        if self.wood > self.storage and self.stone > self.storage and self.silver_coins > self.storage:
+            return True
+        else:
+            return False
+
+    def farming_villages(self):
+        if self.check_storage():
+            print("Full storage")
+            return False
+        try:
+            self.long_idle()
+            self.driver.find_element_by_xpath(
+                '/html/body/div[1]/div[14]/div[3]/div'
+            ).click()
+            self.long_idle()
+            self.driver.find_element_by_xpath(
+                '/html/body/div[7]/div[2]/div/div/ul/li[2]/ul/li[2]'
+            ).click()
+            self.long_idle()
+            self.driver.find_element_by_xpath(
+                '//*[@id="fto_town_wrapper"]/div/div[9]/span/a'
+            ).click()
+            self.long_idle()
+            self.driver.find_element_by_xpath(
+                '//*[@id="fto_claim_button"]'
+            ).click()
+            try:
+                self.long_idle()
+                self.driver.find_element_by_xpath(
+                    '/html/body/div[13]/div/div[11]/div/div[2]/div[1]'
+                ).click()
+                self.long_idle()
+                return True
+            except Exception as e:
+                print("Can't handle with popup screen in village farming")
+                print(e)
+                return False
+        except Exception as e:
+            print(e)
+            return False
 
 
 class Account:
@@ -161,16 +207,27 @@ class Account:
         self.username = ""
         self.password = ""
         self.server_url = ""
-        self.cities = []
+        self.cities_names = []
         self.driver = None
 
         self.short_idle, self.long_idle = define_idle_time(multiplier)
         self.login()
+        self.load_cities()
 
     def load_cities(self):
         self.driver.find_element(By.XPATH,
-                            '/html/body/div[3]/div/div[1]/div[1]/div[1]/div/form/button/span'
-                            ).click()
+                                 '/html/body/div[3]/div/div[1]/div[1]/div[1]/div/form/button/span'
+                                 ).click()
+        city_counter = 1
+        while True:
+            try:
+                city_name = self.driver.find_element(By.XPATH,
+                                                     f'/html/body/div[12]/div[1]/div/div[2]/div/div[{city_counter}]/span').text()
+                self.cities_names.append(city_name)
+                open(fr"resources/building_lists/{city_name}.csv", 'a').close()
+                city_counter += 1
+            except Exception:
+                break
 
     def login(self):
         s = Service(ChromeDriverManager().install())
@@ -181,27 +238,34 @@ class Account:
 
         try:
             self.driver.find_element(By.XPATH,
-                                '//*[@id="login_userid"]').send_keys(self.login)
+                                     '//*[@id="login_userid"]').send_keys(self.login)
             self.driver.find_element(By.XPATH,
-                                '//*[@id="login_password"]').send_keys(self.password)
+                                     '//*[@id="login_password"]').send_keys(self.password)
             self.driver.find_element(By.XPATH,
-                                '/html/body/div[3]/div/div[1]/div[1]/div[1]/div/form/button/span'
-                                ).click()
+                                     '/html/body/div[3]/div/div[1]/div[1]/div[1]/div/form/button/span'
+                                     ).click()
             self.long_idle()
         except Exception as e:
             print("Problem with login.")
             print(e)
         try:
             self.driver.find_element(By.XPATH,
-                                '/html/body/div[2]/div/div/div[1]/div[2]/div[5]/form/div[2]/div/ul/li[1]/div'
-                                ).click()
+                                     '/html/body/div[2]/div/div/div[1]/div[2]/div[5]/form/div[2]/div/ul/li[1]/div'
+                                     ).click()
             self.long_idle()
         except Exception as e:
             print("Problem with choosing the server.")
             print(e)
 
+    def build_in_every_city(self):
+        '''#TODO: iterate over cities with button and build from the building building_list
+            #NEED: creating object for each city'''
+        pass
+
+
 def main():
     return 0
+
 
 if __name__ == '__main__':
     main()
