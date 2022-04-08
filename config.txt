@@ -1,0 +1,5 @@
+[Account]
+username =
+password =
+server_url = https://pl106.grepolis.com/
+multiplier = 1.5

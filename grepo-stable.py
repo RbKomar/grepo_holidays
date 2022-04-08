@@ -1,3 +1,4 @@
+import random
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
@@ -5,6 +6,8 @@ from webdriver_manager.chrome import ChromeDriverManager
 import json
 import csv
 import time
+import os
+import ConfigParser
 
 
 def define_idle_time(multiplier=1):
@@ -150,12 +153,13 @@ class City:
             print(e)
             return False
 
-    def building_bot(self, building_l: []):
+    def building_bot(self):
+        building_list = self.load_building_list()
         self.check_if_enough_free_residents()
-        for building in building_l[:]:
+        for building in building_list:
             if self.build(building):
-                building_l.remove(building)
-                self.update_building_list(building_l)
+                building_list.remove(building)
+                self.update_building_list(building_list)
             else:
                 break
 
@@ -203,16 +207,23 @@ class City:
 
 
 class Account:
-    def __init__(self, multiplier):
-        self.username = ""
-        self.password = ""
-        self.server_url = ""
+    def __init__(self, username, password, server_url, multiplier):
+        self.current_city_obj = None
+        self.username = username
+        self.password = password
+        self.server_url = server_url
         self.cities_names = []
         self.driver = None
 
         self.short_idle, self.long_idle = define_idle_time(multiplier)
         self.login()
         self.load_cities()
+
+    def run(self):
+        while True:
+            self.build_in_every_city()
+            self.collect_farms()
+            time.sleep(random.randint(300, 310))
 
     def load_cities(self):
         self.driver.find_element(By.XPATH,
@@ -257,13 +268,42 @@ class Account:
             print("Problem with choosing the server.")
             print(e)
 
+    def iterate_until_city(self, city_name):
+        actual_city = self.driver.find_element(By.XPATH,
+                                               '/html/body/div[1]/div[17]/div[3]/div[1]/div').text()
+        while actual_city != city_name:
+            self.driver.find_element(By.XPATH,
+                                     '/html/body/div[1]/div[17]/div[2]').click()
+            self.long_idle()
+            actual_city = self.driver.find_element(By.XPATH,
+                                                   '/html/body/div[1]/div[17]/div[3]/div[1]/div').text()
+
+    def create_city_object(self):
+        city = City(self.driver, self.short_idle, self.long_idle)
+        return city
+
     def build_in_every_city(self):
-        '''#TODO: iterate over cities with button and build from the building building_list
-            #NEED: creating object for each city'''
-        pass
+        for city in self.cities_names:
+            building_list_path = f"{city}.csv"
+            if building_list_path in os.listdir("resources/building_lists"):
+                self.iterate_until_city(city)
+                self.current_city_obj = self.create_city_object()
+                self.current_city_obj.building_bot()
+
+    def collect_farms(self):
+        self.current_city_obj.farming_villages()
 
 
 def main():
+    config = ConfigParser.ConfigParser()
+    config.readfp(open(r'config.txt'))
+    username = config.get('Account', 'username')
+    password = config.get('Account', 'password')
+    server_url = config.get('Account', 'server_url')
+    multiplier = config.get('Account', 'multiplier')
+
+    acc = Account(username, password, server_url, multiplier)
+    acc.run()
     return 0
 
 
