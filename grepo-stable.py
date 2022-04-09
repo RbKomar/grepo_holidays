@@ -45,15 +45,18 @@ class City:
         return building_name_map
 
     def load_building_list(self):
-        to_building_list_path = os.path.join(os.path.join("resources", "building_lists"), f"{self.name}.csv")
+        to_building_list_path = os.path.join("resources", "building_lists", f"{self.name}.csv")
         full_path = os.path.join(os.getcwd(), to_building_list_path)
         with open(full_path, "r") as fp:
             reader = csv.reader(fp)
             building_list = list(reader)
-            return building_list[0]
+            if len(building_list) != 0:
+                return building_list[0]
+            else:
+                return []
 
     def update_building_list(self, building_list):
-        to_building_list_path = os.path.join(os.path.join("resources", "building_lists"), f"{self.name}.csv")
+        to_building_list_path = os.path.join("resources", "building_lists", f"{self.name}.csv")
         full_path = os.path.join(os.getcwd(), to_building_list_path)
         with open(full_path, "w") as fp:
             writer = csv.writer(fp)
@@ -148,7 +151,7 @@ class City:
                                                f'//*[@id="building_main_not_possible_button_{self.building_names_map[building]}"]').text
                 print(msg)
                 return False
-            except Exception as e:
+            except Exception:
                 if building != "" and building is not None:
                     print("Budowa jest możliwa.")
                 return True
@@ -159,6 +162,7 @@ class City:
         try:
             if self.is_building_possible(building):
                 building_mapped_name = self.building_names_map[building]
+                self.long_idle()
                 self.driver.find_element(By.XPATH,
                                          f'//*[@id="building_main_{building_mapped_name}"]/div[2]/a[1]').click()
                 #self.building_levels[building] += 1
@@ -181,7 +185,7 @@ class City:
                 break
 
     def check_storage(self):
-        if self.wood >= self.storage - 500 and self.stone >= self.storage - 500 and self.silver_coins >= self.storage - 500:
+        if self.wood >= self.storage - 300 and self.stone >= self.storage - 300 and self.silver_coins >= self.storage - 300:
             return True
         else:
             return False
