@@ -1,5 +1,4 @@
 # Grepo-Holidays
-AHHunter is the script that helps flipping objects in hypixel skyblock AH
 ____________________________________________________________
 ## Modules Installation
 Following modules are required to install:
