@@ -50,14 +50,14 @@ class City:
         with open(full_path, "r") as fp:
             reader = csv.reader(fp)
             building_list = list(reader)
-            return building_list
+            return building_list[0]
 
     def update_building_list(self, building_list):
         to_building_list_path = os.path.join(os.path.join("resources", "building_lists"), f"{self.name}.csv")
         full_path = os.path.join(os.getcwd(), to_building_list_path)
         with open(full_path, "w") as fp:
             writer = csv.writer(fp)
-            writer.writerows(building_list)
+            writer.writerow(building_list)
 
     def get_city_name(self):
         city_name = self.driver.find_element(By.XPATH, '/html/body/div[1]/div[17]/div[3]/div[1]/div').text
@@ -136,6 +136,8 @@ class City:
     def is_building_possible(self, building: str):
         try:
             self.long_idle()
+            self.long_idle()
+            self.long_idle()
             self.driver.refresh()
             self.long_idle()
             self.driver.find_element(By.CSS_SELECTOR,
@@ -160,8 +162,8 @@ class City:
                 building_mapped_name = self.building_names_map[building]
                 self.driver.find_element(By.XPATH,
                                          f'//*[@id="building_main_{building_mapped_name}"]/div[2]/a[1]').click()
-                self.building_levels[building] += 1
-                print(f"Start building of {building_mapped_name} on level {self.building_levels[building]}")
+                #self.building_levels[building] += 1
+                print(f"Start building of {building_mapped_name}")
                 return True
             else:
                 return False
