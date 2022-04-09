@@ -48,8 +48,8 @@ class City:
         to_building_list_path = os.path.join(os.path.join("resources", "building_lists"), f"{self.name}.csv")
         full_path = os.path.join(os.getcwd(), to_building_list_path)
         with open(full_path, "r") as fp:
-            data = fp.read()
-            building_list = data.split(r"\n")
+            reader = csv.reader(fp)
+            building_list = list(reader)
             return building_list
 
     def update_building_list(self, building_list):
@@ -136,18 +136,23 @@ class City:
     def is_building_possible(self, building: str):
         try:
             self.long_idle()
-            self.driver.find_element(By.XPATH,
-                                     '//*[@id="quickbar_dropdown0"]/div').click()
+            self.driver.refresh()
             self.long_idle()
-            msg = self.driver.find_element(By.XPATH,
-                                           '// *[ @ id = "building_main_not_possible_button_' + self.building_names_map[
-                                               building] + '"]').text
-            print(msg)
-            return False
-        except:
-            if building != "" and building is not None:
-                print("Budowa jest możliwa.")
-            return True
+            self.driver.find_element(By.CSS_SELECTOR,
+                                     '#building_main_area_main').click()
+            self.long_idle()
+            try:
+                msg = self.driver.find_element(By.XPATH,
+                                               f'//*[@id="building_main_not_possible_button_{self.building_names_map[building]}"]').text
+                print(msg)
+                return False
+            except Exception as e:
+                if building != "" and building is not None:
+                    print("Budowa jest możliwa.")
+                print(e)
+                return True
+        except Exception as e:
+            print(str(e))
 
     def build(self, building: str):
         try:
