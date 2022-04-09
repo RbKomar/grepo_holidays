@@ -201,7 +201,7 @@ class City:
                                      ).click()
             self.long_idle()
             self.driver.find_element(By.XPATH,
-                                     '/html/body/div[7]/div[2]/div/div/ul/li[2]/ul/li[2]'
+                                     '//*[@id="overviews_link_hover_menu"]/div[2]/div/div/ul/li[2]/ul/li[2]/a'
                                      ).click()
             self.long_idle()
             self.driver.find_element(By.XPATH,
