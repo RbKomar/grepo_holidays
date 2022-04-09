@@ -151,7 +151,6 @@ class City:
             except Exception as e:
                 if building != "" and building is not None:
                     print("Budowa jest możliwa.")
-                print(e)
                 return True
         except Exception as e:
             print(str(e))
@@ -218,7 +217,6 @@ class City:
                 return True
             except Exception as e:
                 print("Can't handle with popup screen in village farming")
-                print(str(e))
         except Exception as e:
             print(str(e))
 
