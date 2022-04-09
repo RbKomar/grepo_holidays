@@ -36,7 +36,7 @@ class City:
         self.building_names_map = self.load_building_names()
         self.building_list = self.load_building_list()
 
-        #self.building_levels = self.get_building_levels()
+        # self.building_levels = self.get_building_levels()
 
     @staticmethod
     def load_building_names():
@@ -74,6 +74,8 @@ class City:
 
     def get_storage_capacity(self):
         try:
+            self.driver.refresh()
+            self.long_idle()
             self.driver.find_element(By.XPATH,
                                      '/html/body/div[1]/div[6]/div[1]'
                                      ).click()
@@ -167,7 +169,7 @@ class City:
                 self.long_idle()
                 self.driver.find_element(By.XPATH,
                                          f'//*[@id="building_main_{building_mapped_name}"]/div[2]/a[1]').click()
-                #self.building_levels[building] += 1
+                # self.building_levels[building] += 1
                 print(f"Start building of {building_mapped_name}")
                 return True
             else:
@@ -188,7 +190,8 @@ class City:
                 break
 
     def is_storage_full(self):
-        if self.wood >= self.storage - 300 or self.stone >= self.storage - 300 or self.silver_coins >= self.storage - 300:
+        storage_cap = self.storage - 100
+        if self.wood >= storage_cap and self.stone >= storage_cap and self.silver_coins >= storage_cap:
             return True
         else:
             return False
@@ -265,7 +268,8 @@ class Account:
                 city_name = self.driver.find_element(By.XPATH,
                                                      f'//*[@id="town_groups_list"]/div[1]/div/div[2]/div/div[{city_counter}]/span').text
                 self.cities_names.append(city_name)
-                open(os.path.join(os.path.join("resources", "building_lists"), f"{city_name}.csv"), 'a', encoding='UTF8').close()
+                open(os.path.join(os.path.join("resources", "building_lists"), f"{city_name}.csv"), 'a',
+                     encoding='UTF8').close()
                 city_counter += 1
             except Exception:
                 break
