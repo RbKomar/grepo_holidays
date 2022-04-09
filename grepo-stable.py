@@ -139,9 +139,9 @@ class City:
     def is_building_possible(self, building: str):
         try:
             self.long_idle()
-            self.long_idle()
-            self.long_idle()
             self.driver.refresh()
+            self.long_idle()
+            self.long_idle()
             self.long_idle()
             self.driver.find_element(By.CSS_SELECTOR,
                                      '#building_main_area_main').click()
@@ -149,6 +149,7 @@ class City:
             try:
                 msg = self.driver.find_element(By.XPATH,
                                                f'//*[@id="building_main_not_possible_button_{self.building_names_map[building]}"]').text
+                '//*[@id="building_main_not_possible_button_wall"]'
                 print(msg)
                 return False
             except Exception:
@@ -162,6 +163,7 @@ class City:
         try:
             if self.is_building_possible(building):
                 building_mapped_name = self.building_names_map[building]
+                self.long_idle()
                 self.long_idle()
                 self.driver.find_element(By.XPATH,
                                          f'//*[@id="building_main_{building_mapped_name}"]/div[2]/a[1]').click()
@@ -178,14 +180,15 @@ class City:
         building_list = self.load_building_list()
         self.check_if_enough_free_residents()
         for building in building_list:
-            if self.build(building):
+            building_stripped = building.strip()
+            if self.build(building_stripped):
                 building_list.remove(building)
                 self.update_building_list(building_list)
             else:
                 break
 
-    def check_storage(self):
-        if self.wood >= self.storage - 300 and self.stone >= self.storage - 300 and self.silver_coins >= self.storage - 300:
+    def is_storage_full(self):
+        if self.wood >= self.storage - 300 or self.stone >= self.storage - 300 or self.silver_coins >= self.storage - 300:
             return True
         else:
             return False
@@ -298,16 +301,17 @@ class Account:
         first_city = self.driver.find_element(By.XPATH,
                                               '/html/body/div[1]/div[17]/div[3]/div[1]/div').text
         actual_city = ""
-        is_storage_not_full = True
         while actual_city != first_city:
             self.driver.find_element(By.XPATH,
                                      '/html/body/div[1]/div[17]/div[2]').click()
             self.long_idle()
             actual_city = self.driver.find_element(By.XPATH,
                                                    '/html/body/div[1]/div[17]/div[3]/div[1]/div').text
+            self.long_idle()
             city = self.create_city_object()
-            is_storage_not_full = is_storage_not_full and city.check_storage()
-        return is_storage_not_full
+            if city.is_storage_full():
+                return False
+        return True
 
     def iterate_until_city(self, city_name: str):
         actual_city = self.driver.find_element(By.XPATH,
@@ -325,12 +329,20 @@ class Account:
 
     def build_in_every_city(self):
         for city in self.cities_names:
+            self.driver.refresh()
+            self.long_idle()
             self.iterate_until_city(city)
             self.current_city_obj = self.create_city_object()
+            self.driver.refresh()
+            self.long_idle()
             self.current_city_obj.building_bot()
 
     def collect_farms(self):
+        self.driver.refresh()
+        self.long_idle()
         if self.check_storage_in_every_city():
+            self.driver.refresh()
+            self.long_idle()
             self.current_city_obj.farming_villages()
         else:
             print("Storage is full!")
