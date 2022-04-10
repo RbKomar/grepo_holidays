@@ -251,25 +251,25 @@ class Account:
         self.define_idle_time()
 
     def run(self):
-        farm_collector_counter = 0
-        self.login()
-        try:
-            self.long_idle()
-            self.load_cities()
-            self.long_idle()
-            while True:
-                if self.use_building_bot:
-                    self.build_in_every_city()
-                    self.long_idle()
-                self.collect_farms()
-                farm_collector_counter += 1
-                print(f"Villages collected already {farm_collector_counter} times during this session.")
-                time.sleep(random.randint(300, 310))
-        except Exception as e:
-            print(str(e))
-            self.multiplier += .5
-            self.define_idle_time()
-            self.run()
+        while True:
+            farm_collector_counter = 0
+            self.login()
+            try:
+                self.long_idle()
+                self.load_cities()
+                self.long_idle()
+                while True:
+                    if self.use_building_bot:
+                        self.build_in_every_city()
+                        self.long_idle()
+                    self.collect_farms()
+                    farm_collector_counter += 1
+                    print(f"Villages collected already {farm_collector_counter} times during this session.")
+                    time.sleep(random.randint(300, 310))
+            except Exception as e:
+                print(str(e))
+                self.multiplier += .5
+                self.define_idle_time()
 
     def load_cities(self):
         self.driver.find_element(By.XPATH,
