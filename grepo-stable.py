@@ -251,11 +251,10 @@ class Account:
         self.define_idle_time()
 
     def run(self):
+        self.login()
+        farm_collector_counter = 0
         while True:
-            farm_collector_counter = 0
-
             try:
-                self.login()
                 self.long_idle()
                 self.load_cities()
                 self.long_idle()
