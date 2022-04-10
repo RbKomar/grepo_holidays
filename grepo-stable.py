@@ -374,6 +374,8 @@ class Account:
     def collect_farms(self):
         self.driver.refresh()
         self.long_idle()
+        self.create_city_object()
+        self.long_idle()
         if self.check_storage_in_every_city():
             self.driver.refresh()
             self.long_idle()
