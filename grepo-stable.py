@@ -86,12 +86,13 @@ class City:
                                                           f'//*[@id="{window_id}"]/div[11]/div/div[2]/div[1]/div[3]'
                                                           ).text
             storage_cap_possible = [int(s) for s in storage_cap_string.split() if s.isdigit()]
-            storage_cap = storage_cap_possible[-1]
-            return storage_cap
+            if len(storage_cap_possible) != 0:
+                storage_cap = storage_cap_possible[-1]
+                return storage_cap
         except Exception as e:
             print("Problem while checking the storage capacity, resources might overflow if it happens more often.")
             print(str(e))
-            return float('inf')
+        return 1000000
 
     def get_building_levels(self):
         b = {}
@@ -136,23 +137,21 @@ class City:
 
     def check_if_enough_free_residents(self, ):
         ppl = int(self.driver.find_element(By.XPATH, '/html/body/div[1]/div[6]/div[4]/div[1]/div[2]').text)
-        if ppl < 20 and "Gospodarstwo wiejskie" != self.building_list[0]:
-            self.building_list.insert(0, "Gospodarstwo wiejskie")
+        if ppl < 20 and len(self.building_list) != 0:
+            if "Gospodarstwo wiejskie" != self.building_list[0]:
+                self.building_list.insert(0, "Gospodarstwo wiejskie")
 
     def is_building_possible(self, building: str):
         try:
             self.long_idle()
             self.driver.refresh()
-            self.long_idle()
-            self.long_idle()
-            self.long_idle()
+            time.sleep(4)
             self.driver.find_element(By.CSS_SELECTOR,
                                      '#building_main_area_main').click()
             self.long_idle()
             try:
                 msg = self.driver.find_element(By.XPATH,
                                                f'//*[@id="building_main_not_possible_button_{self.building_names_map[building]}"]').text
-                '//*[@id="building_main_not_possible_button_wall"]'
                 print(msg)
                 return False
             except Exception:
@@ -225,19 +224,21 @@ class City:
                                          f'//*[@id="{window_id}"]/div[11]/div/div[2]/div[1]/div[3]'
                                          ).click()
                 self.long_idle()
+                print("Resources from the villages were collected.")
                 return True
             except Exception as e:
-                print("Can't handle with popup screen in village farming")
+                print("Can't handle with popup screen in village farming.")
         except Exception as e:
             print(str(e))
 
 
 class Account:
-    def __init__(self, username: str, password: str, server_url: str, multiplier: float):
+    def __init__(self, username: str, password: str, server_url: str, multiplier: float, use_building_bot: bool):
         self.current_city_obj = None
         self.username = username
         self.password = password
         self.server_url = server_url
+        self.use_building_bot = use_building_bot
         self.is_init = True
         self.cities_names = []
         self.driver = None
@@ -246,18 +247,25 @@ class Account:
         self.define_idle_time()
 
     def run(self):
+        farm_collector_counter = 0
         try:
             self.login()
             self.long_idle()
             self.load_cities()
             self.long_idle()
             while True:
-                self.build_in_every_city()
-                self.long_idle()
+                if self.use_building_bot:
+                    self.build_in_every_city()
+                    self.long_idle()
                 self.collect_farms()
+                farm_collector_counter += 1
+                print(f"Villages collected already {farm_collector_counter} times during this session.")
                 time.sleep(random.randint(300, 310))
         except Exception as e:
             print(str(e))
+            self.multiplier += .5
+            self.define_idle_time()
+            self.run()
 
     def load_cities(self):
         self.driver.find_element(By.XPATH,
@@ -371,10 +379,15 @@ class Account:
 
         def short_idle():
             time.sleep(.5 * self.multiplier)
+
         if self.multiplier >= 10:
-            quit(-1)
+            self.multiplier = 2
         self.short_idle = short_idle
         self.long_idle = long_idle
+
+
+def str2bool(v):
+    return v.lower() in ("yes", "true", "t", "1")
 
 
 def main():
@@ -384,8 +397,9 @@ def main():
     password = config.get('Account', 'password')
     server_url = config.get('Account', 'server_url')
     multiplier = float(config.get('Account', 'multiplier'))
+    building_bot = str2bool(config.get('Account', 'building_bot'))
 
-    acc = Account(username, password, server_url, multiplier)
+    acc = Account(username, password, server_url, multiplier, building_bot)
     acc.run()
     return 0
 

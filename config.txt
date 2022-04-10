@@ -2,4 +2,5 @@
 username =
 password =
 server_url = https://pl106.grepolis.com/
-multiplier = 1.5
+multiplier = 2
+building_bot = false
