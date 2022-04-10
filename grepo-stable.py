@@ -89,8 +89,9 @@ class City:
             storage_cap = storage_cap_possible[-1]
             return storage_cap
         except Exception as e:
+            print("Problem while checking the storage capacity, resources might overflow if it happens more often.")
             print(str(e))
-            return 0
+            return float('inf')
 
     def get_building_levels(self):
         b = {}
