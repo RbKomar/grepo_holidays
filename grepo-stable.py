@@ -253,8 +253,9 @@ class Account:
     def run(self):
         while True:
             farm_collector_counter = 0
-            self.login()
+
             try:
+                self.login()
                 self.long_idle()
                 self.load_cities()
                 self.long_idle()
