@@ -316,45 +316,46 @@ class Account:
             print(str(e))
 
     def check_storage_in_every_city(self):
-        try:
-            first_city = self.driver.find_element(By.XPATH,
-                                                  CITY_NAME_XPATH).text
-            actual_city = ""
-            while actual_city != first_city:
-                self.long_idle()
-                self.driver.find_element(By.XPATH,
-                                         '/html/body/div[1]/div[17]/div[2]').click()
-                self.long_idle()
-                actual_city = self.driver.find_element(By.XPATH,
-                                                       CITY_NAME_XPATH).text
-                self.long_idle()
-                city = self.create_city_object()
-                if city.is_storage_full():
-                    return False
-            return True
-        except Exception as e:
-            print(str(e))
-            self.multiplier += .5
-            self.define_idle_time()
-            self.check_storage_in_every_city()
+        while True:
+            try:
+                first_city = self.driver.find_element(By.XPATH,
+                                                      CITY_NAME_XPATH).text
+                actual_city = ""
+                while actual_city != first_city:
+                    self.long_idle()
+                    self.driver.find_element(By.XPATH,
+                                             '/html/body/div[1]/div[17]/div[2]').click()
+                    self.long_idle()
+                    actual_city = self.driver.find_element(By.XPATH,
+                                                           CITY_NAME_XPATH).text
+                    self.long_idle()
+                    city = self.create_city_object()
+                    if city.is_storage_full():
+                        return False
+                return True
+            except Exception as e:
+                print(str(e))
+                self.multiplier += .5
+                self.define_idle_time()
 
     def iterate_until_city(self, city_name: str):
-        try:
-            actual_city = self.driver.find_element(By.XPATH,
-                                                   CITY_NAME_XPATH).text
-            while actual_city != city_name:
-                self.driver.refresh()
-                self.long_idle()
-                self.driver.find_element(By.XPATH,
-                                         '/html/body/div[1]/div[17]/div[2]').click()
-                self.long_idle()
+        while True:
+            try:
                 actual_city = self.driver.find_element(By.XPATH,
                                                        CITY_NAME_XPATH).text
-        except Exception as e:
-            print(str(e))
-            self.multiplier += .5
-            self.define_idle_time()
-            self.iterate_until_city(city_name)
+                while actual_city != city_name:
+                    self.driver.refresh()
+                    self.long_idle()
+                    self.driver.find_element(By.XPATH,
+                                             '/html/body/div[1]/div[17]/div[2]').click()
+                    self.long_idle()
+                    actual_city = self.driver.find_element(By.XPATH,
+                                                           CITY_NAME_XPATH).text
+                break
+            except Exception as e:
+                print(str(e))
+                self.multiplier += .5
+                self.define_idle_time()
 
     def create_city_object(self):
         city = City(self.driver, self.short_idle, self.long_idle)
