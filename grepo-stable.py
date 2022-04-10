@@ -251,10 +251,10 @@ class Account:
         self.define_idle_time()
 
     def run(self):
-        self.login()
         farm_collector_counter = 0
         while True:
             try:
+                self.login()
                 self.long_idle()
                 self.load_cities()
                 self.long_idle()
@@ -289,11 +289,13 @@ class Account:
                 break
 
     def login(self):
-        s = Service(ChromeDriverManager().install())
-        self.driver = webdriver.Chrome(service=s)
+        if self.is_init:
+            s = Service(ChromeDriverManager().install())
+            self.driver = webdriver.Chrome(service=s)
 
-        self.driver.maximize_window()
-        self.driver.get(self.server_url)
+            self.driver.maximize_window()
+            self.driver.get(self.server_url)
+            self.is_init = False
         try:
             self.driver.find_element(By.XPATH,
                                      '//*[@id="login_userid"]').send_keys(self.username)
