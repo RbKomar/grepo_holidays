@@ -291,8 +291,9 @@ class Account:
     def login(self):
         if self.is_init:
             s = Service(ChromeDriverManager().install())
-            self.driver = webdriver.Chrome(service=s)
-
+            chrome_options = webdriver.ChromeOptions()
+            chrome_options.add_argument("--mute-audio")
+            self.driver = webdriver.Chrome(service=s, chrome_options=chrome_options)
             self.driver.maximize_window()
             self.driver.get(self.server_url)
             self.is_init = False
