@@ -240,8 +240,9 @@ class Account:
         self.is_init = True
         self.cities_names = []
         self.driver = None
-
-        self.short_idle, self.long_idle = define_idle_time(multiplier)
+        self.multiplier = multiplier
+        self.short_idle, self.long_idle = time.sleep(.5), time.sleep(1)
+        self.define_idle_time()
 
     def run(self):
         try:
@@ -302,30 +303,42 @@ class Account:
             print(str(e))
 
     def check_storage_in_every_city(self):
-        first_city = self.driver.find_element(By.XPATH,
-                                              '/html/body/div[1]/div[17]/div[3]/div[1]/div').text
-        actual_city = ""
-        while actual_city != first_city:
-            self.driver.find_element(By.XPATH,
-                                     '/html/body/div[1]/div[17]/div[2]').click()
-            self.long_idle()
-            actual_city = self.driver.find_element(By.XPATH,
-                                                   '/html/body/div[1]/div[17]/div[3]/div[1]/div').text
-            self.long_idle()
-            city = self.create_city_object()
-            if city.is_storage_full():
-                return False
-        return True
+        try:
+            first_city = self.driver.find_element(By.XPATH,
+                                                  '/html/body/div[1]/div[17]/div[3]/div[1]/div').text
+            actual_city = ""
+            while actual_city != first_city:
+                self.driver.find_element(By.XPATH,
+                                         '/html/body/div[1]/div[17]/div[2]').click()
+                self.long_idle()
+                actual_city = self.driver.find_element(By.XPATH,
+                                                       '/html/body/div[1]/div[17]/div[3]/div[1]/div').text
+                self.long_idle()
+                city = self.create_city_object()
+                if city.is_storage_full():
+                    return False
+            return True
+        except Exception as e:
+            print(str(e))
+            self.multiplier += .5
+            self.define_idle_time()
+            self.check_storage_in_every_city()
 
     def iterate_until_city(self, city_name: str):
-        actual_city = self.driver.find_element(By.XPATH,
-                                               '/html/body/div[1]/div[17]/div[3]/div[1]/div').text
-        while actual_city != city_name:
-            self.driver.find_element(By.XPATH,
-                                     '/html/body/div[1]/div[17]/div[2]').click()
-            self.long_idle()
+        try:
             actual_city = self.driver.find_element(By.XPATH,
                                                    '/html/body/div[1]/div[17]/div[3]/div[1]/div').text
+            while actual_city != city_name:
+                self.driver.find_element(By.XPATH,
+                                         '/html/body/div[1]/div[17]/div[2]').click()
+                self.long_idle()
+                actual_city = self.driver.find_element(By.XPATH,
+                                                       '/html/body/div[1]/div[17]/div[3]/div[1]/div').text
+        except Exception as e:
+            print(str(e))
+            self.multiplier += .5
+            self.define_idle_time()
+            self.iterate_until_city(city_name)
 
     def create_city_object(self):
         city = City(self.driver, self.short_idle, self.long_idle)
@@ -350,6 +363,17 @@ class Account:
             self.current_city_obj.farming_villages()
         else:
             print("Storage is full!")
+
+    def define_idle_time(self):
+        def long_idle():
+            time.sleep(1 * self.multiplier)
+
+        def short_idle():
+            time.sleep(.5 * self.multiplier)
+        if self.multiplier >= 10:
+            quit(-1)
+        self.short_idle = short_idle
+        self.long_idle = long_idle
 
 
 def main():
