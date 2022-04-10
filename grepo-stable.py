@@ -293,7 +293,7 @@ class Account:
             s = Service(ChromeDriverManager().install())
             chrome_options = webdriver.ChromeOptions()
             chrome_options.add_argument("--mute-audio")
-            self.driver = webdriver.Chrome(service=s, chrome_options=chrome_options)
+            self.driver = webdriver.Chrome(service=s, options=chrome_options)
             self.driver.maximize_window()
             self.driver.get(self.server_url)
             self.is_init = False
@@ -340,6 +340,8 @@ class Account:
                 print(str(e))
                 self.multiplier += .5
                 self.define_idle_time()
+                if self.multiplier >= 7:
+                    break
 
     def iterate_until_city(self, city_name: str):
         while True:
@@ -359,6 +361,8 @@ class Account:
                 print(str(e))
                 self.multiplier += .5
                 self.define_idle_time()
+                if self.multiplier >= 7:
+                    break
 
     def create_city_object(self):
         city = City(self.driver, self.short_idle, self.long_idle)
