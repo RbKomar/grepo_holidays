@@ -10,6 +10,8 @@ import time
 import configparser
 import os
 
+CITY_NAME_XPATH = '/html/body/div[1]/div[17]/div[3]/div[1]/div'
+
 
 def define_idle_time(multiplier=1.):
     def long_idle():
@@ -63,7 +65,8 @@ class City:
             writer.writerow(building_list)
 
     def get_city_name(self):
-        city_name = self.driver.find_element(By.XPATH, '/html/body/div[1]/div[17]/div[3]/div[1]/div').text
+        self.long_idle()
+        city_name = self.driver.find_element(By.XPATH, CITY_NAME_XPATH).text
         return city_name
 
     def get_resources(self):
@@ -89,10 +92,11 @@ class City:
             if len(storage_cap_possible) != 0:
                 storage_cap = storage_cap_possible[-1]
                 return storage_cap
+            return 1000000
         except Exception as e:
             print("Problem while checking the storage capacity, resources might overflow if it happens more often.")
             print(str(e))
-        return 1000000
+            return 1000000
 
     def get_building_levels(self):
         b = {}
@@ -314,14 +318,15 @@ class Account:
     def check_storage_in_every_city(self):
         try:
             first_city = self.driver.find_element(By.XPATH,
-                                                  '/html/body/div[1]/div[17]/div[3]/div[1]/div').text
+                                                  CITY_NAME_XPATH).text
             actual_city = ""
             while actual_city != first_city:
+                self.long_idle()
                 self.driver.find_element(By.XPATH,
                                          '/html/body/div[1]/div[17]/div[2]').click()
                 self.long_idle()
                 actual_city = self.driver.find_element(By.XPATH,
-                                                       '/html/body/div[1]/div[17]/div[3]/div[1]/div').text
+                                                       CITY_NAME_XPATH).text
                 self.long_idle()
                 city = self.create_city_object()
                 if city.is_storage_full():
@@ -336,13 +341,15 @@ class Account:
     def iterate_until_city(self, city_name: str):
         try:
             actual_city = self.driver.find_element(By.XPATH,
-                                                   '/html/body/div[1]/div[17]/div[3]/div[1]/div').text
+                                                   CITY_NAME_XPATH).text
             while actual_city != city_name:
+                self.driver.refresh()
+                self.long_idle()
                 self.driver.find_element(By.XPATH,
                                          '/html/body/div[1]/div[17]/div[2]').click()
                 self.long_idle()
                 actual_city = self.driver.find_element(By.XPATH,
-                                                       '/html/body/div[1]/div[17]/div[3]/div[1]/div').text
+                                                       CITY_NAME_XPATH).text
         except Exception as e:
             print(str(e))
             self.multiplier += .5
