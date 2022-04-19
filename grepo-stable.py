@@ -1,4 +1,4 @@
-# coding: utf-8
+# -*- coding: utf-8 -*-
 import random
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -237,12 +237,14 @@ class City:
 
 
 class Account:
-    def __init__(self, username: str, password: str, server_url: str, multiplier: float, use_building_bot: bool):
+    def __init__(self, username: str, password: str, server_url: str, multiplier: float, use_building_bot: bool,
+                 check_storage: bool):
         self.current_city_obj = None
         self.username = username
         self.password = password
         self.server_url = server_url
         self.use_building_bot = use_building_bot
+        self.check_storage = check_storage
         self.is_init = True
         self.cities_names = []
         self.driver = None
@@ -383,12 +385,17 @@ class Account:
         self.long_idle()
         self.current_city_obj = self.create_city_object()
         self.long_idle()
-        if self.check_storage_in_every_city():
+        if self.check_storage:
+            if self.check_storage_in_every_city():
+                self.driver.refresh()
+                self.long_idle()
+                self.current_city_obj.farming_villages()
+            else:
+                print("Storage is full!")
+        else:
             self.driver.refresh()
             self.long_idle()
             self.current_city_obj.farming_villages()
-        else:
-            print("Storage is full!")
 
     def define_idle_time(self):
         def long_idle():
@@ -415,8 +422,9 @@ def main():
     server_url = config.get('Account', 'server_url')
     multiplier = float(config.get('Account', 'multiplier'))
     building_bot = str2bool(config.get('Account', 'building_bot'))
+    check_storage = str2bool(config.get('Account', 'storage_check'))
 
-    acc = Account(username, password, server_url, multiplier, building_bot)
+    acc = Account(username, password, server_url, multiplier, building_bot, check_storage)
     acc.run()
     return 0
 
