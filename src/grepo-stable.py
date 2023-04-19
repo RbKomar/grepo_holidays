@@ -9,8 +9,13 @@ import csv
 import time
 import configparser
 import os
+import logging
+from selenium.webdriver.common.action_chains import ActionChains
 
 CITY_NAME_XPATH = '/html/body/div[1]/div[17]/div[3]/div[1]/div'
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s::%(levelname)s::%(name)s - %(message)s')
+logger = logging.getLogger('GrepoBot')
 
 
 def define_idle_time(multiplier=1.):
@@ -24,7 +29,7 @@ def define_idle_time(multiplier=1.):
 
 
 class City:
-    def __init__(self, driver, short_idle, long_idle):
+    def __init__(self, driver, short_idle, long_idle, building_bot=False):
         self.wood = 0
         self.stone = 0
         self.silver_coins = 0
@@ -32,13 +37,15 @@ class City:
         self.short_idle = short_idle
         self.long_idle = long_idle
 
-        self.storage = self.get_storage_capacity()
         self.name = self.get_city_name()
-
-        self.building_names_map = self.load_building_names()
-        self.building_list = self.load_building_list()
-
-        # self.building_levels = self.get_building_levels()
+        if building_bot:
+            self.building_names_map = self.load_building_names()
+            self.building_list = self.load_building_list()
+            self.building_levels = self.get_building_levels()
+        else:
+            self.building_names_map = None
+            self.building_list = None
+            self.building_levels = None
 
     @staticmethod
     def load_building_names():
@@ -67,6 +74,7 @@ class City:
     def get_city_name(self):
         self.long_idle()
         city_name = self.driver.find_element(By.XPATH, CITY_NAME_XPATH).text
+        logger.info(f"Welcome in {city_name}")
         return city_name
 
     def get_resources(self):
@@ -74,29 +82,7 @@ class City:
         self.stone = int(self.driver.find_element(By.XPATH, '//*[@id="ui_box"]/div[6]/div[2]/div[1]/div[2]').text)
         self.silver_coins = int(
             self.driver.find_element(By.XPATH, '//*[@id="ui_box"]/div[6]/div[3]/div[1]/div[2]').text)
-
-    def get_storage_capacity(self):
-        try:
-            self.driver.refresh()
-            self.long_idle()
-            self.driver.find_element(By.XPATH,
-                                     '/html/body/div[1]/div[6]/div[1]'
-                                     ).click()
-            self.long_idle()
-            window_id = self.driver.find_element(By.CSS_SELECTOR,
-                                                 'body > div.window_curtain.ui-front > div').get_attribute("id")
-            storage_cap_string = self.driver.find_element(By.XPATH,
-                                                          f'//*[@id="{window_id}"]/div[11]/div/div[2]/div[1]/div[3]'
-                                                          ).text
-            storage_cap_possible = [int(s) for s in storage_cap_string.split() if s.isdigit()]
-            if len(storage_cap_possible) != 0:
-                storage_cap = storage_cap_possible[-1]
-                return storage_cap
-            return 1000000
-        except Exception as e:
-            print("Problem while checking the storage capacity, resources might overflow if it happens more often.")
-            print(str(e))
-            return 1000000
+        logger.info(f"Currently in {self.name}: {self.wood} wood, {self.stone} stone, {self.silver_coins} silver coins")
 
     def get_building_levels(self):
         b = {}
@@ -135,15 +121,17 @@ class City:
             b["Jaskinia"] = int(
                 self.driver.find_element(By.XPATH, '//*[@id="building_main_hide"]/div[2]/div[1]/span[1]').text)
         except Exception as e:
-            print(f"Problem occured while reading the building levels in city {self.name}")
-            print(str(e))
+            logger.error(f"Problem occured while reading the building levels in city {self.name}")
         return b
 
     def check_if_enough_free_residents(self, ):
+        self.long_idle()
         ppl = int(self.driver.find_element(By.XPATH, '/html/body/div[1]/div[6]/div[4]/div[1]/div[2]').text)
-        if ppl < 20 and len(self.building_list) != 0:
+        if ppl < 100 and len(self.building_list) != 0:
             if "Gospodarstwo wiejskie" != self.building_list[0]:
                 self.building_list.insert(0, "Gospodarstwo wiejskie")
+                self.update_building_list(self.building_list)
+                logger.info("Not enough free residents, adding a farm to building list.")
 
     def is_building_possible(self, building: str):
         try:
@@ -156,14 +144,14 @@ class City:
             try:
                 msg = self.driver.find_element(By.XPATH,
                                                f'//*[@id="building_main_not_possible_button_{self.building_names_map[building]}"]').text
-                print(msg)
+                logger.debug(msg)
                 return False
             except Exception:
                 if building != "" and building is not None:
-                    print("Budowa jest możliwa.")
+                    logger.debug(f"Building {building} is possible.")
                 return True
         except Exception as e:
-            print(str(e))
+            logger.error(f"Problem while checking if building {building} is possible.")
 
     def build(self, building: str):
         try:
@@ -173,13 +161,12 @@ class City:
                 self.long_idle()
                 self.driver.find_element(By.XPATH,
                                          f'//*[@id="building_main_{building_mapped_name}"]/div[2]/a[1]').click()
-                # self.building_levels[building] += 1
-                print(f"Start building of {building_mapped_name}")
+                logger.info(f"Start building of {building_mapped_name}")
                 return True
             else:
                 return False
         except Exception as e:
-            print(str(e))
+            logger.error("Problem while building.")
             return False
 
     def building_bot(self):
@@ -193,27 +180,26 @@ class City:
             else:
                 break
 
-    def is_storage_full(self):
-        storage_cap = self.storage - 100
-        if self.wood >= storage_cap and self.stone >= storage_cap and self.silver_coins >= storage_cap:
-            return True
-        else:
-            return False
-
-    def farming_villages(self):
+    def farming_villages(self, cities_with_full_storage: list):
         try:
             self.long_idle()
-            self.driver.find_element(By.XPATH,
-                                     '/html/body/div[1]/div[14]/div[3]/div'
-                                     ).click()
-            self.long_idle()
+            button_to_hover = self.driver.find_element(By.XPATH,
+                                                       '/html/body/div[1]/div[14]/div[3]/div'
+                                                       )
+            ActionChains(self.driver).move_to_element(button_to_hover).perform()
+
             self.driver.find_element(By.XPATH,
                                      '//*[@id="overviews_link_hover_menu"]/div[2]/div/div/ul/li[2]/ul/li[2]/a'
                                      ).click()
             self.long_idle()
-            self.driver.find_element(By.XPATH,
-                                     '//*[@id="fto_town_wrapper"]/div/div[9]/span/a'
-                                     ).click()
+            city_list = self.driver.find_element(By.ID, 'fto_town_list')
+            for city in city_list.find_elements(By.TAG_NAME, "li"):
+                try:
+                    city_name = city.find_element(By.CLASS_NAME, "gp_town_link").text
+                    if city_name not in cities_with_full_storage:
+                        city.find_element(By.CLASS_NAME, "town_checkbox").click()
+                except Exception:
+                    continue
             self.long_idle()
             self.driver.find_element(By.XPATH,
                                      '//*[@id="fto_claim_button"]'
@@ -228,12 +214,14 @@ class City:
                                          f'//*[@id="{window_id}"]/div[11]/div/div[2]/div[1]/div[3]'
                                          ).click()
                 self.long_idle()
-                print("Resources from the villages were collected.")
+                logger.info("Resources from the villages were collected.")
                 return True
             except Exception as e:
-                print("Can't handle with popup screen in village farming.")
+                logger.error("Can't handle with popup screen in village farming.")
+                logger.error(str(e))
         except Exception as e:
-            print(str(e))
+            logger.error("Exception occured while farming villages.")
+            logger.error(str(e))
 
 
 class Account:
@@ -269,14 +257,11 @@ class Account:
                     print(f"Villages collected already {farm_collector_counter} times during this session.")
                     time.sleep(random.randint(300, 310))
             except Exception as e:
-                print(str(e))
-                self.multiplier += .5
-                self.define_idle_time()
+                logger.error(str(e))
+                self.define_idle_time(.2)
 
     def load_cities(self):
-        self.driver.find_element(By.XPATH,
-                                 '/html/body/div[1]/div[17]/div[3]/div[2]'
-                                 ).click()
+        self.driver.find_element(By.XPATH, '/html/body/div[1]/div[17]/div[3]/div[2]').click()
         city_counter = 1
         self.long_idle()
         while True:
@@ -308,63 +293,78 @@ class Account:
                                      '/html/body/div[3]/div/div[1]/div[1]/div[1]/div/form/button/span'
                                      ).click()
             self.long_idle()
-        except Exception as e:
+        except Exception:
             print("Problem with login.")
-            print(str(e))
         try:
             self.driver.find_element(By.XPATH,
                                      '/html/body/div[2]/div/div/div[1]/div[2]/div[5]/form/div[2]/div/ul/li[1]/div'
                                      ).click()
             self.long_idle()
-        except Exception as e:
-            print("Problem with choosing the server.")
-            print(str(e))
+        except Exception:
+            pass
+
+    @staticmethod
+    def is_overflowing(city_name, wood, stone, iron, storage_capacity):
+        wood, stone, iron, storage_capacity = int(wood), int(stone), int(iron), int(storage_capacity)
+        is_wood_overflowing = wood - 100 >= storage_capacity
+        is_stone_overflowing = stone - 100 >= storage_capacity
+        is_iron_overflowing = iron - 100 >= storage_capacity
+        logger.info(
+            f"Are resources overflowing in {city_name}: Wood: {is_wood_overflowing} | Stone: {is_stone_overflowing} | Iron: {is_iron_overflowing}")
+        return is_wood_overflowing and is_stone_overflowing and is_iron_overflowing
 
     def check_storage_in_every_city(self):
+        tries = 0
         while True:
             try:
-                first_city = self.driver.find_element(By.XPATH,
-                                                      CITY_NAME_XPATH).text
-                actual_city = ""
-                while actual_city != first_city:
-                    self.long_idle()
-                    self.driver.find_element(By.XPATH,
-                                             '/html/body/div[1]/div[17]/div[2]').click()
-                    self.long_idle()
-                    actual_city = self.driver.find_element(By.XPATH,
-                                                           CITY_NAME_XPATH).text
-                    self.long_idle()
-                    city = self.create_city_object()
-                    if city.is_storage_full():
-                        return False
-                return True
-            except Exception as e:
-                print(str(e))
-                self.multiplier += .5
-                self.define_idle_time()
-                if self.multiplier >= 7:
+                cities_with_full_storage = []
+                self.driver.refresh()
+                self.long_idle()
+                self.driver.find_element(By.XPATH,
+                                         '//*[@id="ui_box"]/div[14]/div[3]/div'
+                                         ).click()
+                self.short_idle()
+                city_list = self.driver.find_element(By.ID, 'trade_overview_towns')
+                for city in city_list.find_elements(By.TAG_NAME, "li"):
+                    city_name = city.find_element(By.CLASS_NAME, "gp_town_link").text
+                    wood = city.find_element(By.CLASS_NAME, "resource_wood_icon").text
+                    stone = city.find_element(By.CLASS_NAME, "resource_stone_icon").text
+                    iron = city.find_element(By.CLASS_NAME, "resource_iron_icon").text
+                    storage_capacity = city.find_element(By.CLASS_NAME, "storage_icon").text
+                    if self.is_overflowing(city_name, wood, stone, iron, storage_capacity):
+                        cities_with_full_storage.append(city_name)
+                if cities_with_full_storage:
+                    logger.info(f'Cities with full storage are {", ".join(cities_with_full_storage)}')
+                else:
+                    logger.info("No city has full storage.")
+                return cities_with_full_storage
+            except Exception:
+                self.define_idle_time(.2)
+                logger.error("Exception occured while checking storage in every city. Trying again...")
+                tries += 1
+                logger.debug(f"Try number: {tries}")
+                if tries > 4:
+                    logger.error("Can't check storage in every city.")
                     break
-
     def iterate_until_city(self, city_name: str):
+        counter = 0
         while True:
             try:
-                actual_city = self.driver.find_element(By.XPATH,
-                                                       CITY_NAME_XPATH).text
-                while actual_city != city_name:
-                    self.driver.refresh()
-                    self.long_idle()
+                if counter > 30:
+                    logger.error(f"Can't find the city with name: {city_name}.")
+                    break
+                self.long_idle()
+                city_at_the_moment = self.driver.find_element(By.XPATH, CITY_NAME_XPATH).text
+                if city_at_the_moment == city_name:
+                    return
+                else:
                     self.driver.find_element(By.XPATH,
                                              '/html/body/div[1]/div[17]/div[2]').click()
-                    self.long_idle()
-                    actual_city = self.driver.find_element(By.XPATH,
-                                                           CITY_NAME_XPATH).text
-                break
+                self.long_idle()
+                counter += 1
             except Exception as e:
-                print(str(e))
-                self.multiplier += .5
-                self.define_idle_time()
-                if self.multiplier >= 7:
-                    break
+                logger.error("Exception occured while iterating until city.")
+                self.define_idle_time(.2)
 
     def create_city_object(self):
         city = City(self.driver, self.short_idle, self.long_idle)
@@ -386,25 +386,25 @@ class Account:
         self.current_city_obj = self.create_city_object()
         self.long_idle()
         if self.check_storage:
-            if self.check_storage_in_every_city():
-                self.driver.refresh()
-                self.long_idle()
-                self.current_city_obj.farming_villages()
-            else:
-                print("Storage is full!")
+            cities_with_full_storage = self.check_storage_in_every_city()
+            self.driver.refresh()
+            self.long_idle()
+            self.current_city_obj.farming_villages(cities_with_full_storage)
         else:
             self.driver.refresh()
             self.long_idle()
-            self.current_city_obj.farming_villages()
+            self.current_city_obj.farming_villages([])
 
-    def define_idle_time(self):
+    def define_idle_time(self, redefine: float = .0):
+        self.multiplier += redefine
+
         def long_idle():
             time.sleep(1 * self.multiplier)
 
         def short_idle():
             time.sleep(.5 * self.multiplier)
 
-        if self.multiplier >= 10:
+        if self.multiplier >= 3.5:
             self.multiplier = 2
         self.short_idle = short_idle
         self.long_idle = long_idle

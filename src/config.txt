@@ -1,0 +1,7 @@
+[Account]
+username = l
+password = p
+server_url = https://pl115.grepolis.com/
+multiplier = 2
+building_bot = false
+storage_check = true
