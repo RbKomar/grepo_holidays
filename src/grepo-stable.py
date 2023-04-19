@@ -417,7 +417,7 @@ class Account:
                 else:
                     found = False
                     for city_on_island in cities:
-                        if city_on_island not in cities_to_use:
+                        if city_on_island not in cities_to_use and city_on_island not in cities_with_full_storage:
                             cities_to_use.append(city_on_island)
                             found = True
                             break
