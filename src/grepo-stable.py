@@ -180,23 +180,15 @@ class City:
             else:
                 break
 
-    def farming_villages(self, cities_with_full_storage: list):
-        try:
-            self.long_idle()
-            button_to_hover = self.driver.find_element(By.XPATH,
-                                                       '/html/body/div[1]/div[14]/div[3]/div'
-                                                       )
-            ActionChains(self.driver).move_to_element(button_to_hover).perform()
 
-            self.driver.find_element(By.XPATH,
-                                     '//*[@id="overviews_link_hover_menu"]/div[2]/div/div/ul/li[2]/ul/li[2]/a'
-                                     ).click()
-            self.long_idle()
-            city_list = self.driver.find_element(By.ID, 'fto_town_list')
+
+    def farming_villages(self, farm_cities):
+        try:
+            city_list = get_cities_list(self.driver, self.long_idle)
             for city in city_list.find_elements(By.TAG_NAME, "li"):
                 try:
                     city_name = city.find_element(By.CLASS_NAME, "gp_town_link").text
-                    if city_name not in cities_with_full_storage:
+                    if city_name in farm_cities:
                         city.find_element(By.CLASS_NAME, "town_checkbox").click()
                 except Exception:
                     continue
@@ -313,6 +305,42 @@ class Account:
             f"Are resources overflowing in {city_name}: Wood: {is_wood_overflowing} | Stone: {is_stone_overflowing} | Iron: {is_iron_overflowing}")
         return is_wood_overflowing and is_stone_overflowing and is_iron_overflowing
 
+    def deal_exception(self, tries):
+        self.define_idle_time(.2)
+        tries += 1
+        logger.debug(f"Try number: {tries}")
+        return tries
+
+    def get_cities_by_island(self):
+        tries = 0
+        while True:
+            try:
+                city_list = get_cities_list(self.driver, self.long_idle)
+                islands = {}
+                island_name = None
+                for elem in city_list.find_elements(By.TAG_NAME, "li"):
+                    try:
+                        current_island_name = elem.find_element(By.CLASS_NAME, "gp_island_link").text
+                        if current_island_name:
+                            island_name = current_island_name
+                    except Exception:
+                        pass
+                    if island_name and island_name not in islands:
+                        islands[island_name] = []
+                    try:
+                        city_name = elem.find_element(By.CLASS_NAME, "gp_town_link").text
+                        islands[island_name].append(city_name)
+                    except Exception:
+                        pass
+                for island, cities in islands.items():
+                    logger.info(f"{island}: {cities}")
+                return islands
+            except Exception as e:
+                logger.error(str(e))
+                tries = self.deal_exception(tries)
+                if tries > 4:
+                    break
+
     def check_storage_in_every_city(self):
         tries = 0
         while True:
@@ -339,13 +367,11 @@ class Account:
                     logger.info("No city has full storage.")
                 return cities_with_full_storage
             except Exception:
-                self.define_idle_time(.2)
-                logger.error("Exception occured while checking storage in every city. Trying again...")
-                tries += 1
-                logger.debug(f"Try number: {tries}")
+                logger.error("Exception occured while checking storage in every city.")
+                tries = self.deal_exception(tries)
                 if tries > 4:
-                    logger.error("Can't check storage in every city.")
                     break
+
     def iterate_until_city(self, city_name: str):
         counter = 0
         while True:
@@ -380,6 +406,25 @@ class Account:
             self.long_idle()
             self.current_city_obj.building_bot()
 
+    @staticmethod
+    def cities_to_farm(cities_with_full_storage: list, cities_by_island: dict):
+        cities_to_use = []
+        for island, cities in cities_by_island.items():
+            for city in cities:
+                if city not in cities_with_full_storage:
+                    cities_to_use.append(city)
+                    break
+                else:
+                    found = False
+                    for city_on_island in cities:
+                        if city_on_island not in cities_to_use:
+                            cities_to_use.append(city_on_island)
+                            found = True
+                            break
+                    if found:
+                        break
+        return cities_to_use
+
     def collect_farms(self):
         self.driver.refresh()
         self.long_idle()
@@ -387,9 +432,11 @@ class Account:
         self.long_idle()
         if self.check_storage:
             cities_with_full_storage = self.check_storage_in_every_city()
+            cities_by_island = self.get_cities_by_island()
+            farm_cities = self.cities_to_farm(cities_with_full_storage, cities_by_island)
             self.driver.refresh()
             self.long_idle()
-            self.current_city_obj.farming_villages(cities_with_full_storage)
+            self.current_city_obj.farming_villages(farm_cities)
         else:
             self.driver.refresh()
             self.long_idle()
@@ -408,6 +455,21 @@ class Account:
             self.multiplier = 2
         self.short_idle = short_idle
         self.long_idle = long_idle
+
+
+def get_cities_list(driver, long_idle):
+    driver.refresh()
+    long_idle()
+    button_to_hover = driver.find_element(By.XPATH,
+                                               '/html/body/div[1]/div[14]/div[3]/div'
+                                               )
+    ActionChains(driver).move_to_element(button_to_hover).perform()
+    driver.find_element(By.XPATH,
+                             '//*[@id="overviews_link_hover_menu"]/div[2]/div/div/ul/li[2]/ul/li[2]/a'
+                             ).click()
+    long_idle()
+    city_list = driver.find_element(By.ID, 'fto_town_list')
+    return city_list
 
 
 def str2bool(v):
