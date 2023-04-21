@@ -297,12 +297,12 @@ class Account:
 
     @staticmethod
     def is_overflowing(city_name, wood, stone, iron, storage_capacity):
-        wood, stone, iron, storage_capacity = int(wood), int(stone), int(iron), int(storage_capacity)
-        is_wood_overflowing = wood - 100 >= storage_capacity
-        is_stone_overflowing = stone - 100 >= storage_capacity
-        is_iron_overflowing = iron - 100 >= storage_capacity
+        wood, stone, iron, storage_capacity = int(wood), int(stone), int(iron), int(storage_capacity)- 100
+        is_wood_overflowing = wood >= storage_capacity
+        is_stone_overflowing = stone >= storage_capacity
+        is_iron_overflowing = iron >= storage_capacity
         logger.info(
-            f"Are resources overflowing in {city_name}: Wood: {is_wood_overflowing} | Stone: {is_stone_overflowing} | Iron: {is_iron_overflowing}")
+            f"Are resources overflowing in {city_name}: Wood: {is_wood_overflowing} | Stone: {is_stone_overflowing} | Iron: {is_iron_overflowing} | Storage capacity: {storage_capacity}")
         return is_wood_overflowing and is_stone_overflowing and is_iron_overflowing
 
     def deal_exception(self, tries):
